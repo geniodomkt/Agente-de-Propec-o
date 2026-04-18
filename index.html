@@ -80,6 +80,31 @@
   .btn-danger { padding: 7px 14px; background: transparent; border: 1px solid rgba(255,107,53,0.4); color: var(--warn); border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
   .btn-danger:hover { background: rgba(255,107,53,0.1); }
 
+  /* NICHO SELECTOR */
+  .nicho-selector { margin-bottom: 16px; }
+  .nicho-search { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.2s; margin-bottom: 10px; }
+  .nicho-search:focus { border-color: var(--accent); }
+  .nicho-search::placeholder { color: var(--muted); }
+  .nicho-mode-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+  .nicho-mode-btn { padding: 5px 12px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .nicho-mode-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.06); }
+  .nicho-mode-btn.global-btn { border-color: rgba(0,102,255,0.4); color: var(--accent2); }
+  .nicho-mode-btn.global-btn.active { border-color: var(--accent2); background: rgba(0,102,255,0.1); }
+  .nicho-grid { display: flex; flex-wrap: wrap; gap: 6px; max-height: 160px; overflow-y: auto; padding: 2px; }
+  .nicho-grid::-webkit-scrollbar { width: 4px; } .nicho-grid::-webkit-scrollbar-track { background: var(--border); border-radius: 2px; } .nicho-grid::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+  .nicho-chip { padding: 5px 11px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; border-radius: 20px; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .nicho-chip.selected { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
+  .nicho-chip.custom { border-color: rgba(0,102,255,0.3); }
+  .nicho-chip.custom.selected { border-color: var(--accent2); color: var(--accent2); background: rgba(0,102,255,0.08); }
+  .nicho-add-row { display: flex; gap: 8px; margin-top: 10px; }
+  .nicho-add-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; outline: none; transition: border-color 0.2s; }
+  .nicho-add-row input:focus { border-color: var(--accent2); }
+  .nicho-add-row button { padding: 8px 14px; background: rgba(0,102,255,0.1); border: 1px solid rgba(0,102,255,0.25); color: var(--accent2); border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .nicho-add-row button:hover { background: rgba(0,102,255,0.2); }
+  .nicho-count { font-size: 10px; color: var(--muted); margin-left: auto; }
+  .rating-badge { display: inline-flex; align-items: center; gap: 3px; background: rgba(255,193,7,0.1); color: #ffc107; border: 1px solid rgba(255,193,7,0.2); padding: 2px 7px; border-radius: 4px; font-size: 10px; }
+  .reviews-badge { font-size: 10px; color: var(--muted); }
+
   .status { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 10px; margin-top: 14px; min-height: 46px; }
   .status.running { border-color: var(--accent2); color: var(--accent2); }
   .status.done { border-color: var(--accent); color: var(--accent); }
@@ -197,6 +222,24 @@
         </div>
       </div>
 
+      <div class="field">
+        <label>Nichos para Pesquisar</label>
+        <div class="nicho-selector">
+          <div class="nicho-mode-row">
+            <button class="nicho-mode-btn global-btn" id="btnGlobal" onclick="toggleGlobal()">🌐 Busca Global (sem nicho)</button>
+            <button class="nicho-mode-btn" onclick="selecionarTodos()">✅ Todos</button>
+            <button class="nicho-mode-btn" onclick="deselecionarTodos()">☐ Nenhum</button>
+            <span class="nicho-count" id="nichoCount">0 selecionados</span>
+          </div>
+          <input class="nicho-search" id="nichoSearch" placeholder="Filtrar nichos..." oninput="filtrarNichos()" />
+          <div class="nicho-grid" id="nichoGrid"></div>
+          <div class="nicho-add-row">
+            <input type="text" id="novoNicho" placeholder="Adicionar nicho personalizado..." onkeydown="if(event.key==='Enter')adicionarNicho()" />
+            <button onclick="adicionarNicho()">+ Adicionar</button>
+          </div>
+        </div>
+      </div>
+
       <div class="actions">
         <button class="btn-primary" id="btnBuscar" onclick="iniciarBusca()">🔍 Buscar Agora</button>
         <button class="btn-stop" id="btnParar" onclick="pararBusca()" style="display:none">⏹ Parar</button>
@@ -273,7 +316,11 @@ const GMAPS_KEY = 'AIzaSyClOpP2XVhrGL8FTwUHLtqMcHAkKXHmWYE';
 <script>
 const API_KEY = GMAPS_KEY;
 const COST_NEARBY = 0.032, COST_DETAILS = 0.017, QUOTA_LIMIT = 200;
-const CATEGORIAS = ['restaurante','lanchonete','padaria','mercado','farmácia','salão de beleza','barbearia','clínica','dentista','academia','pet shop','oficina mecânica','eletricista','encanador','marceneiro','pintor','serralheria','gráfica','escola','creche','advogado','contabilidade','imobiliária','construtora','loja de roupas','sapataria','ótica','joalheria','floricultura','lavanderia','hotel','pousada','buffet','fotógrafo','assistência técnica','supermercado'];
+const CATEGORIAS_DEFAULT = ['restaurante','lanchonete','padaria','mercado','farmácia','salão de beleza','barbearia','clínica','dentista','academia','pet shop','oficina mecânica','eletricista','encanador','marceneiro','pintor','serralheria','gráfica','escola','creche','advogado','contabilidade','imobiliária','construtora','loja de roupas','sapataria','ótica','joalheria','floricultura','lavanderia','hotel','pousada','buffet','fotógrafo','assistência técnica','supermercado'];
+
+let customNichos = JSON.parse(localStorage.getItem('prosp_custom_nichos')||'[]');
+let selectedNichos = new Set(JSON.parse(localStorage.getItem('prosp_selected_nichos')||JSON.stringify(CATEGORIAS_DEFAULT)));
+let globalMode = localStorage.getItem('prosp_global_mode')==='true';
 
 let results = JSON.parse(localStorage.getItem('prosp_results')||'[]');
 let seenIds = new Set(JSON.parse(localStorage.getItem('prosp_seen')||'[]'));
@@ -314,6 +361,76 @@ function initMaps() {
   });
 
   // placeholder esconde quando localização for encontrada
+}
+
+// ── Nicho Selector ───────────────────────────────────────────────
+function renderNichoGrid(filter='') {
+  const allNichos = [...CATEGORIAS_DEFAULT, ...customNichos];
+  const grid = document.getElementById('nichoGrid');
+  const f = filter.toLowerCase();
+  const filtered = allNichos.filter(n => n.toLowerCase().includes(f));
+  grid.innerHTML = filtered.map(n => {
+    const isCustom = customNichos.includes(n);
+    const isSel = selectedNichos.has(n);
+    return `<div class="nicho-chip ${isSel?'selected':''} ${isCustom?'custom':''}" onclick="toggleNicho('${n.replace(/'/g,"\\'")}', this)">${n}${isCustom?` <span onclick="event.stopPropagation();removerNicho('${n.replace(/'/g,"\\'")}')">×</span>`:''}</div>`;
+  }).join('');
+  document.getElementById('nichoCount').textContent = globalMode ? '🌐 Global' : `${selectedNichos.size} selecionados`;
+}
+
+function toggleNicho(nicho, el) {
+  if (globalMode) return;
+  if (selectedNichos.has(nicho)) { selectedNichos.delete(nicho); el.classList.remove('selected'); }
+  else { selectedNichos.add(nicho); el.classList.add('selected'); }
+  document.getElementById('nichoCount').textContent = `${selectedNichos.size} selecionados`;
+  localStorage.setItem('prosp_selected_nichos', JSON.stringify([...selectedNichos]));
+}
+
+function selecionarTodos() {
+  globalMode = false;
+  document.getElementById('btnGlobal').classList.remove('active');
+  const all = [...CATEGORIAS_DEFAULT, ...customNichos];
+  all.forEach(n => selectedNichos.add(n));
+  localStorage.setItem('prosp_selected_nichos', JSON.stringify([...selectedNichos]));
+  renderNichoGrid(document.getElementById('nichoSearch').value);
+}
+
+function deselecionarTodos() {
+  globalMode = false;
+  document.getElementById('btnGlobal').classList.remove('active');
+  selectedNichos.clear();
+  localStorage.setItem('prosp_selected_nichos', JSON.stringify([]));
+  renderNichoGrid(document.getElementById('nichoSearch').value);
+}
+
+function toggleGlobal() {
+  globalMode = !globalMode;
+  document.getElementById('btnGlobal').classList.toggle('active', globalMode);
+  localStorage.setItem('prosp_global_mode', globalMode);
+  renderNichoGrid(document.getElementById('nichoSearch').value);
+}
+
+function filtrarNichos() {
+  renderNichoGrid(document.getElementById('nichoSearch').value);
+}
+
+function adicionarNicho() {
+  const inp = document.getElementById('novoNicho');
+  const val = inp.value.trim().toLowerCase();
+  if (!val || customNichos.includes(val) || CATEGORIAS_DEFAULT.includes(val)) { inp.value=''; return; }
+  customNichos.push(val);
+  selectedNichos.add(val);
+  localStorage.setItem('prosp_custom_nichos', JSON.stringify(customNichos));
+  localStorage.setItem('prosp_selected_nichos', JSON.stringify([...selectedNichos]));
+  inp.value='';
+  renderNichoGrid(document.getElementById('nichoSearch').value);
+}
+
+function removerNicho(nicho) {
+  customNichos = customNichos.filter(n => n !== nicho);
+  selectedNichos.delete(nicho);
+  localStorage.setItem('prosp_custom_nichos', JSON.stringify(customNichos));
+  localStorage.setItem('prosp_selected_nichos', JSON.stringify([...selectedNichos]));
+  renderNichoGrid(document.getElementById('nichoSearch').value);
 }
 
 // ── Preview map ──────────────────────────────────────────────────
@@ -447,6 +564,9 @@ async function iniciarBusca() {
   const raio=parseInt(document.getElementById('raio').value);
   if (!regiao && currentMode!=='raio') { setStatus('statusBusca','Digite uma região ou bairro','error'); return; }
 
+  const categoriasParaBuscar = globalMode ? [''] : [...selectedNichos];
+  if (!globalMode && categoriasParaBuscar.length === 0) { setStatus('statusBusca','Selecione ao menos um nicho ou use Busca Global','error'); return; }
+
   stopFlag = false;
   const btn=document.getElementById('btnBuscar');
   const btnParar=document.getElementById('btnParar');
@@ -463,25 +583,25 @@ async function iniciarBusca() {
     } else { lat=-19.9167; lng=-43.9345; }
 
     let novos=0;
-    for (let i=0;i<CATEGORIAS.length;i++) {
+    for (let i=0;i<categoriasParaBuscar.length;i++) {
       if (stopFlag) { setStatus('statusBusca',`Busca interrompida · ${novos} empresas salvas`,'done'); break; }
-
-      // Aviso de quota mas NÃO bloqueia
       if (quotaUsed >= QUOTA_LIMIT) {
         setStatus('statusBusca',`⚠️ Limite de $${QUOTA_LIMIT} atingido — atualize o crédito nas configurações`,'error');
         break;
       }
 
-      const cat=CATEGORIAS[i];
-      setStatus('statusBusca',`Varrendo: ${cat} (${i+1}/${CATEGORIAS.length}) · ${novos} novas`,'running');
-      const places=await nearbySearch(lat,lng,raio,cat);
+      const cat = categoriasParaBuscar[i];
+      const label = globalMode ? 'busca global' : cat;
+      setStatus('statusBusca',`Varrendo: ${label} (${i+1}/${categoriasParaBuscar.length}) · ${novos} novas`,'running');
+      const places = await nearbySearch(lat, lng, raio, cat);
       quotaUsed+=COST_NEARBY;
 
       for (const p of places) {
         if (stopFlag) break;
         if (seenIds.has(p.place_id)) continue;
         if (p.website) { seenIds.add(p.place_id); continue; }
-        const det=await placeDetails(p.place_id);
+
+        const det = await placeDetails(p.place_id);
         quotaUsed+=COST_DETAILS;
         if (det.website) { seenIds.add(p.place_id); continue; }
 
@@ -491,8 +611,16 @@ async function iniciarBusca() {
         const plat=loc?(typeof loc.lat==='function'?loc.lat():loc.lat):null;
         const plng=loc?(typeof loc.lng==='function'?loc.lng():loc.lng):null;
 
+        // Dados do Google
+        const rating = p.rating || det.rating || null;
+        const reviews = p.user_ratings_total || det.user_ratings_total || 0;
+        const tipos = (p.types||[]).filter(t=>!['point_of_interest','establishment','food'].includes(t));
+        const nichoFinal = globalMode ? (tipos[0]||'geral').replace(/_/g,' ') : cat;
+
         results.push({
-          id:p.place_id, nome:p.name, nicho:cat,
+          id:p.place_id, nome:p.name,
+          nicho: nichoFinal,
+          rating, reviews,
           endereco:p.vicinity||det.formatted_address||'',
           telefone:phone,
           whatsapp:cleaned?'https://wa.me/55'+cleaned.replace(/^0/,''):'',
@@ -550,7 +678,7 @@ function placeDetails(placeId) {
     if (!mapPrev) { resolve({}); return; }
     const service = new google.maps.places.PlacesService(mapPrev);
     service.getDetails(
-      { placeId, fields: ['website', 'formatted_phone_number', 'international_phone_number', 'formatted_address'] },
+      { placeId, fields: ['website', 'formatted_phone_number', 'international_phone_number', 'formatted_address', 'rating', 'user_ratings_total'] },
       (result, status) => {
         resolve(status === google.maps.places.PlacesServiceStatus.OK ? result : {});
       }
@@ -562,15 +690,23 @@ function placeDetails(placeId) {
 function renderResultsTable() {
   const wrap=document.getElementById('tableWrap');
   if (!results.length) { wrap.innerHTML=`<div class="empty"><div class="icon">📭</div><p>Nenhum resultado ainda.<br>Faça uma busca na aba <strong>Busca Manual</strong>.</p></div>`; return; }
-  const rows=results.map(e=>`<tr><td><strong>${e.nome}</strong></td><td><span class="nicho-tag">${e.nicho}</span></td><td style="color:var(--muted);font-size:11px">${e.telefone||'—'}</td><td>${e.whatsapp?`<a href="${e.whatsapp}" target="_blank" class="wpp-btn">💬 WhatsApp</a>`:'<span style="color:var(--muted);font-size:11px">—</span>'}</td><td style="color:var(--muted);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.endereco}</td><td style="color:var(--muted);font-size:10px">${e.coletado}</td></tr>`).join('');
-  wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Nicho</th><th>Telefone</th><th>WhatsApp</th><th>Endereço</th><th>Coletado</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const rows=results.map(e=>`<tr>
+    <td><strong>${e.nome}</strong></td>
+    <td><span class="nicho-tag">${e.nicho}</span></td>
+    <td>${e.rating ? `<span class="rating-badge">⭐ ${e.rating}</span> <span class="reviews-badge">(${e.reviews||0})</span>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+    <td style="color:var(--muted);font-size:11px">${e.telefone||'—'}</td>
+    <td>${e.whatsapp?`<a href="${e.whatsapp}" target="_blank" class="wpp-btn">💬 WhatsApp</a>`:'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+    <td style="color:var(--muted);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.endereco}</td>
+    <td style="color:var(--muted);font-size:10px">${e.coletado}</td>
+  </tr>`).join('');
+  wrap.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Nicho</th><th>Avaliação</th><th>Telefone</th><th>WhatsApp</th><th>Endereço</th><th>Coletado</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   updateQuotaUI();
 }
 
 function exportarCSV() {
   if (!results.length) return alert('Nenhum resultado para exportar.');
-  const header=['Nome','Nicho','Telefone','WhatsApp','Endereço','Coletado','Região'];
-  const rows=results.map(e=>[e.nome,e.nicho,e.telefone,e.whatsapp,e.endereco,e.coletado,e.regiao].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const header=['Nome','Nicho','Avaliação','Reviews','Telefone','WhatsApp','Endereço','Coletado','Região'];
+  const rows=results.map(e=>[e.nome,e.nicho,e.rating||'',e.reviews||'',e.telefone,e.whatsapp,e.endereco,e.coletado,e.regiao].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(','));
   const blob=new Blob(['\ufeff'+[header.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`prospeccao_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`; a.click();
 }
@@ -612,6 +748,16 @@ function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
 // Init
 updateQuotaUI(); renderResultsTable(); renderRegioes();
+// Init nicho selector
+document.addEventListener('DOMContentLoaded', () => {
+  renderNichoGrid();
+  if (globalMode) document.getElementById('btnGlobal').classList.add('active');
+});
+// fallback se DOMContentLoaded já passou
+if (document.readyState !== 'loading') {
+  renderNichoGrid();
+  if (globalMode) document.getElementById('btnGlobal')?.classList.add('active');
+}
 </script>
 </body>
 </html>
