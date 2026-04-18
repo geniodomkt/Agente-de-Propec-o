@@ -223,6 +223,16 @@
       </div>
 
       <div class="field">
+        <label>Limite de Empresas — parar ao atingir</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="slider-wrap" style="flex:1">
+            <input type="range" id="limiteEmpresas" min="10" max="1000" step="10" value="0" oninput="updateLimite(this.value)" />
+            <span class="slider-val" id="limiteVal" style="min-width:90px">Sem limite</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
         <label>Nichos para Pesquisar</label>
         <div class="nicho-selector">
           <div class="nicho-mode-row">
@@ -231,7 +241,12 @@
             <button class="nicho-mode-btn" onclick="deselecionarTodos()">☐ Nenhum</button>
             <span class="nicho-count" id="nichoCount">0 selecionados</span>
           </div>
-          <input class="nicho-search" id="nichoSearch" placeholder="Filtrar nichos..." oninput="filtrarNichos()" />
+          <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+            <input class="nicho-search" id="nichoSearch" placeholder="🔍 Filtrar por nome..." oninput="filtrarNichos()" style="flex:1;min-width:160px;margin:0" />
+            <select id="grupoFilter" onchange="filtrarNichos()" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;outline:none;cursor:pointer">
+              <option value="">Todos os grupos</option>
+            </select>
+          </div>
           <div class="nicho-grid" id="nichoGrid"></div>
           <div class="nicho-add-row">
             <input type="text" id="novoNicho" placeholder="Adicionar nicho personalizado..." onkeydown="if(event.key==='Enter')adicionarNicho()" />
@@ -316,7 +331,147 @@ const GMAPS_KEY = 'AIzaSyClOpP2XVhrGL8FTwUHLtqMcHAkKXHmWYE';
 <script>
 const API_KEY = GMAPS_KEY;
 const COST_NEARBY = 0.032, COST_DETAILS = 0.017, QUOTA_LIMIT = 200;
-const CATEGORIAS_DEFAULT = ['restaurante','lanchonete','padaria','mercado','farmácia','salão de beleza','barbearia','clínica','dentista','academia','pet shop','oficina mecânica','eletricista','encanador','marceneiro','pintor','serralheria','gráfica','escola','creche','advogado','contabilidade','imobiliária','construtora','loja de roupas','sapataria','ótica','joalheria','floricultura','lavanderia','hotel','pousada','buffet','fotógrafo','assistência técnica','supermercado'];
+const CATEGORIAS_POR_GRUPO = {
+  '🍽️ Alimentação': [
+    'restaurante','lanchonete','padaria','fast food','hamburgueria','pizzaria','churrascaria',
+    'sushi','japonês','chinês','italiano','árabe','mexicano','frutos do mar','vegetariano',
+    'vegano','buffet','café','cafeteria','sorveteria','doceria','confeitaria','pastelaria',
+    'açaí','sucos','rotisseria','mercearia','marmitaria','comida a quilo','food truck',
+    'bar','boteco','pub','cervejaria','choperia','adega','wine bar','petiscaria',
+    'casa de bolos','crepe','tapioca','lanches','self service','delivery de comida'
+  ],
+  '💇 Beleza e Estética': [
+    'salão de beleza','barbearia','manicure','pedicure','nail art','nail designer',
+    'cabeleireiro','esteticista','design de sobrancelhas','micropigmentação','depilação',
+    'spa','massagem','spa facial','clínica estética','bronzeamento','extensão de cílios',
+    'maquiagem','penteados','lash designer','podologia','estética corporal','drenagem linfática',
+    'estética automotiva','spa capilar','colorista','visagismo'
+  ],
+  '🏥 Saúde e Bem-estar': [
+    'clínica médica','dentista','clínica odontológica','farmácia','hospital','laboratório',
+    'fisioterapia','psicólogo','psiquiatra','nutricionista','fonoaudiólogo','terapeuta',
+    'acupuntura','quiropraxia','médico','pediatra','ginecologista','cardiologista',
+    'dermatologista','ortopedista','oftalmologista','otorrinolaringologista','urologista',
+    'clínica de reabilitação','academia','pilates','yoga','crossfit','natação',
+    'personal trainer','nutrição esportiva','medicina alternativa','homeopatia',
+    'terapia ocupacional','fonoaudiologia','wellness center','centro de saúde'
+  ],
+  '🔧 Serviços para Casa': [
+    'eletricista','encanador','pintor','marceneiro','pedreiro','carpinteiro',
+    'serralheria','vidraçaria','dedetizador','jardineiro','limpeza residencial',
+    'reforma e construção','instalador de ar condicionado','técnico de TV','técnico de geladeira',
+    'técnico de máquina de lavar','instalação de câmeras','segurança eletrônica',
+    'portão automático','chaveiro','marido de aluguel','diarista','faxineira',
+    'empresa de mudanças','desentupidora','impermeabilização','gesseiro','azulejista',
+    'piso e revestimento','cobertura e telhado','paisagista','piscicultor','manutenção predial'
+  ],
+  '🚗 Automotivo': [
+    'oficina mecânica','funilaria e pintura','lava-rápido','borracharia','concessionária',
+    'loja de pneus','autopeças','martelinho de ouro','insulfilm','som automotivo',
+    'estética automotiva','guincho','despachante','locadora de carros','moto táxi',
+    'mecânico de motos','loja de motos','elétrica automotiva','injeção eletrônica',
+    'vidro automotivo','tacógrafo','GNV instalação','ar condicionado automotivo',
+    'balanceamento e alinhamento','troca de óleo','acessórios automotivos'
+  ],
+  '📚 Educação': [
+    'escola','escola infantil','creche','pré-escola','ensino médio','faculdade','universidade',
+    'curso de idiomas','curso técnico','curso profissionalizante','escola de música',
+    'escola de dança','escola de artes','reforço escolar','tutoria','aula particular',
+    'curso de informática','escola de motorista','autoescola','curso preparatório',
+    'escola de culinária','escola de fotografia','curso de design','curso online',
+    'escola esportiva','escola de natação','escolinha de futebol','teatro infantil','circo'
+  ],
+  '🛠️ Serviços Profissionais': [
+    'advogado','contabilidade','imobiliária','corretor de imóveis','seguradora',
+    'consultor financeiro','assessoria contábil','escritório de advocacia',
+    'despachante','cartório','agência de publicidade','designer gráfico','desenvolvedor web',
+    'marketing digital','fotógrafo','videomaker','produtora de vídeo','agência de viagens',
+    'turismo','guia turístico','tradutor','intérprete','consultoria empresarial',
+    'recursos humanos','agência de emprego','assessoria de imprensa','relações públicas',
+    'arquiteto','engenheiro','topógrafo','geólogo','paisagista profissional'
+  ],
+  '🛍️ Comércio e Varejo': [
+    'supermercado','mercado','minimercado','mercearia','loja de roupas','sapataria',
+    'ótica','joalheria','farmácia','papelaria','livraria','loja de eletrônicos',
+    'loja de informática','loja de celular','loja de móveis','loja de decoração',
+    'loja de materiais de construção','ferragem','loja de brinquedos','loja de artigos esportivos',
+    'sex shop','loja de lingerie','loja de bebê','loja de noivas','loja de festa',
+    'floricultura','pet shop','aquário','loja de games','loja de instrumentos musicais',
+    'brechó','loja de segunda mão','loja de cosméticos','perfumaria','loja de suplementos',
+    'loja de colchões','loja de piscinas','loja de ferramentas','atacadista','loja de atacado'
+  ],
+  '🏗️ Construção e Imóveis': [
+    'construtora','incorporadora','imobiliária','arquitetura','engenharia civil',
+    'loja de materiais de construção','marmoraria','esquadrias de alumínio',
+    'loja de tintas','loja de hidráulica','loja de elétrica','serralheria',
+    'estruturas metálicas','pré-moldados','empresa de reformas','design de interiores',
+    'decoração','gesso e drywall','pisos e revestimentos','loja de portas e janelas'
+  ],
+  '🐾 Pets': [
+    'pet shop','veterinário','clínica veterinária','banho e tosa','hotel para pets',
+    'adestrador de cães','pet care','pet sitter','loja de ração','loja de acessórios pet',
+    'creche para cães','transporte de animais','acupuntura veterinária','petisco artesanal'
+  ],
+  '💻 Tecnologia e Informática': [
+    'assistência técnica','conserto de celular','conserto de notebook','loja de informática',
+    'loja de celular','provedor de internet','desenvolvimento de software','TI','suporte técnico',
+    'câmeras e segurança','automação residencial','drone','impressão 3D','coworking',
+    'loja de games','curso de programação','agência digital'
+  ],
+  '🎨 Arte e Criatividade': [
+    'estúdio de tatuagem','piercing','estúdio fotográfico','gráfica','produtora de vídeo',
+    'escola de artes','galeria de arte','estúdio de música','gravadora','escola de música',
+    'escola de dança','teatro','escola de teatro','artesanato','loja de artesanato',
+    'ateliê de costura','bordado','pintura artística','escultura','cerâmica','vitral'
+  ],
+  '🏋️ Esporte e Lazer': [
+    'academia','crossfit','pilates','yoga','natação','escolinha de futebol',
+    'clube esportivo','quadra de futebol','campo de futebol','beach tennis','padel',
+    'tênis','vôlei de praia','surf','kitesurf','escalada','artes marciais','boxe',
+    'jiu-jitsu','karatê','muay thai','judô','esgrima','equitação','ciclismo',
+    'skate','patins','boliche','sinuca','paintball','laser game','escape room',
+    'parque de diversões','brinquedoteca','clube de tiro','golfe','hipismo'
+  ],
+  '🌐 Serviços Informais e Autônomos': [
+    'costureira','bordadeira','salgadeira','doceira','confeiteira','bolos personalizados',
+    'marmita','quentinha','pão artesanal','brigadeiro','bem casado','trufas',
+    'customização de roupas','customização de calçados','pintura em tecido',
+    'artesã','crochê e tricô','bijuteria artesanal','sabão e velas artesanais',
+    'terapeuta holístico','reiki','tarô','astrologia','mentoria','coaching',
+    'DJ','MC','fotógrafo de festas','cerimonialista','buffet de festas','decoração de festas',
+    'animador de festas','mágico','palhaço','recreacionista','locutor',
+    'músico autônomo','cantor','banda','produtor musical',
+    'cuidador de idosos','acompanhante hospitalar','babá','motorista particular',
+    'entregador','motoboy','lavador de roupas','costureira de roupas sociais',
+    'sapateiro','chaveiro ambulante','amolador de facas','reciclagem','catador',
+    'quebra-galho','serviços gerais','auxiliar de limpeza','porteiro','vigia'
+  ],
+  '🍺 Bares e Entretenimento Noturno': [
+    'bar','boteco','pub','balada','boate','night club','karaokê','casa noturna',
+    'bar de jazz','bar de samba','forró','festa universitária','open bar',
+    'cervejaria artesanal','choperia','lounge','rooftop bar','bar temático'
+  ],
+  '🏨 Hospedagem e Turismo': [
+    'hotel','pousada','hostel','airbnb','resort','camping','chalé','flat',
+    'apart-hotel','agência de turismo','guia turístico','passeio turístico',
+    'aluguel de temporada','casa de temporada'
+  ],
+  '💈 Serviços de Uniforme e Moda': [
+    'alfaiate','costureira','bordado em uniformes','silk screen','sublimação',
+    'loja de uniformes','camisetas personalizadas','brinde','loja de fardamento'
+  ],
+  '📦 Logística e Transporte': [
+    'transportadora','motoboy','entregador','empresa de mudanças','frete',
+    'guincho','reboque','táxi','uber','transporte escolar','van escolar',
+    'aluguel de caminhão','loja de embalagens','courier'
+  ],
+  '🏛️ Governo e Social': [
+    'prefeitura','câmara municipal','delegacia','bombeiros','posto de saúde',
+    'CRAS','CAPS','associação','cooperativa','ONG','sindicato','igreja','templo',
+    'centro espírita','terreiro','centro comunitário'
+  ]
+};
+const CATEGORIAS_DEFAULT = Object.values(CATEGORIAS_POR_GRUPO).flat();
 
 let customNichos = JSON.parse(localStorage.getItem('prosp_custom_nichos')||'[]');
 let selectedNichos = new Set(JSON.parse(localStorage.getItem('prosp_selected_nichos')||JSON.stringify(CATEGORIAS_DEFAULT)));
@@ -364,17 +519,40 @@ function initMaps() {
 }
 
 // ── Nicho Selector ───────────────────────────────────────────────
+function initGrupoFilter() {
+  const sel = document.getElementById('grupoFilter');
+  if (!sel) return;
+  Object.keys(CATEGORIAS_POR_GRUPO).forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g; opt.textContent = g;
+    sel.appendChild(opt);
+  });
+}
+
 function renderNichoGrid(filter='') {
   const allNichos = [...CATEGORIAS_DEFAULT, ...customNichos];
   const grid = document.getElementById('nichoGrid');
   const f = filter.toLowerCase();
-  const filtered = allNichos.filter(n => n.toLowerCase().includes(f));
+  const grupo = document.getElementById('grupoFilter')?.value || '';
+  
+  let filtered = allNichos;
+  if (grupo) {
+    const grupoNichos = CATEGORIAS_POR_GRUPO[grupo] || [];
+    filtered = filtered.filter(n => grupoNichos.includes(n) || customNichos.includes(n));
+  }
+  if (f) filtered = filtered.filter(n => n.toLowerCase().includes(f));
+
   grid.innerHTML = filtered.map(n => {
     const isCustom = customNichos.includes(n);
     const isSel = selectedNichos.has(n);
-    return `<div class="nicho-chip ${isSel?'selected':''} ${isCustom?'custom':''}" onclick="toggleNicho('${n.replace(/'/g,"\\'")}', this)">${n}${isCustom?` <span onclick="event.stopPropagation();removerNicho('${n.replace(/'/g,"\\'")}')">×</span>`:''}</div>`;
+    return `<div class="nicho-chip ${isSel?'selected':''} ${isCustom?'custom':''}" onclick="toggleNicho('${n.replace(/'/g,"\\'").replace(/"/g,'&quot;')}', this)">${n}${isCustom?` <span onclick="event.stopPropagation();removerNicho('${n.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">×</span>`:''}</div>`;
   }).join('');
   document.getElementById('nichoCount').textContent = globalMode ? '🌐 Global' : `${selectedNichos.size} selecionados`;
+}
+
+function updateLimite(v) {
+  const val = parseInt(v);
+  document.getElementById('limiteVal').textContent = val === 0 ? 'Sem limite' : `${val} empresas`;
 }
 
 function toggleNicho(nicho, el) {
@@ -568,6 +746,7 @@ async function iniciarBusca() {
   if (!globalMode && categoriasParaBuscar.length === 0) { setStatus('statusBusca','Selecione ao menos um nicho ou use Busca Global','error'); return; }
 
   stopFlag = false;
+  const limite = parseInt(document.getElementById('limiteEmpresas').value) || 0;
   const btn=document.getElementById('btnBuscar');
   const btnParar=document.getElementById('btnParar');
   btn.disabled=true; btn.innerHTML='<span class="spinning">⟳</span> Buscando...';
@@ -629,6 +808,12 @@ async function iniciarBusca() {
           lat:plat, lng:plng
         });
         seenIds.add(p.place_id); novos++;
+        // Verificar limite de empresas
+        if (limite > 0 && novos >= limite) {
+          stopFlag = true;
+          setStatus('statusBusca',`✅ Limite de ${limite} empresas atingido!`,'done');
+          break;
+        }
       }
       updateQuotaUI(); saveState();
       await sleep(200);
@@ -750,11 +935,13 @@ function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 updateQuotaUI(); renderResultsTable(); renderRegioes();
 // Init nicho selector
 document.addEventListener('DOMContentLoaded', () => {
+  initGrupoFilter();
   renderNichoGrid();
   if (globalMode) document.getElementById('btnGlobal').classList.add('active');
 });
 // fallback se DOMContentLoaded já passou
 if (document.readyState !== 'loading') {
+  initGrupoFilter();
   renderNichoGrid();
   if (globalMode) document.getElementById('btnGlobal')?.classList.add('active');
 }
