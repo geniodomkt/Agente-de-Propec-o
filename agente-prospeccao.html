@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agente Prospecção</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #00e5a0;
+    --accent2: #0066ff;
+    --warn: #ff6b35;
+    --text: #e8e8f0;
+    --muted: #666680;
+    --success: #00e5a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 48px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .header-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .header-text p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* Quota bar */
+  .quota-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 32px;
+    animation: fadeDown 0.6s 0.1s ease both;
+  }
+
+  .quota-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .quota-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .quota-value {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .quota-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .quota-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    width: 0%;
+    transition: width 1s ease;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+    animation: fadeDown 0.6s 0.15s ease both;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--surface2);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  /* Panels */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+
+  /* Form */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    animation: fadeDown 0.6s 0.2s ease both;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    width: 3px; height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .field {
+    margin-bottom: 20px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,160,0.08);
+  }
+
+  .field input::placeholder { color: var(--muted); }
+
+  /* Slider */
+  .slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .slider-wrap input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    outline: none;
+    border: none;
+    padding: 0;
+  }
+
+  .slider-wrap input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(0,229,160,0.4);
+  }
+
+  .slider-val {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Mode toggles */
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .mode-btn {
+    padding: 12px 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .mode-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,229,160,0.06);
+  }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    padding: 14px 24px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,229,160,0.3); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    padding: 14px 20px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover { border-color: var(--text); }
+
+  /* Status */
+  .status {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    min-height: 48px;
+  }
+
+  .status.running { border-color: var(--accent2); color: var(--accent2); }
+  .status.done { border-color: var(--accent); color: var(--accent); }
+  .status.error { border-color: var(--warn); color: var(--warn); }
+
+  .pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1s infinite;
+    flex-shrink: 0;
+  }
+
+  /* Results */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .results-count {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .btn-export {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-export:hover { background: rgba(0,229,160,0.1); }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(42,42,62,0.5);
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: rgba(0,229,160,0.02); }
+
+  .nicho-tag {
+    background: rgba(0,102,255,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(0,102,255,0.2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .wpp-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0,229,160,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.2);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .wpp-btn:hover { background: rgba(0,229,160,0.2); }
+
+  /* Schedule */
+  .schedule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .schedule-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .schedule-item label {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+
+  .schedule-item input, .schedule-item select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    outline: none;
+  }
+
+  .schedule-item select option { background: var(--surface); }
+
+  /* Toggle switch */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+  }
+
+  .toggle-label {
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .toggle {
+    position: relative;
+    width: 44px; height: 24px;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 99px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    left: 3px; top: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+
+  .toggle input:checked + .toggle-slider { background: rgba(0,229,160,0.2); }
+  .toggle input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+    background: var(--accent);
+  }
+
+  /* Regions list */
+  .region-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    min-height: 40px;
+  }
+
+  .region-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,102,255,0.1);
+    border: 1px solid rgba(0,102,255,0.25);
+    color: var(--accent2);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .region-tag button {
+    background: none;
+    border: none;
+    color: var(--accent2);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.6;
+    padding: 0;
+  }
+
+  .region-tag button:hover { opacity: 1; }
+
+  .add-region {
+    display: flex;
+    gap: 8px;
+  }
+
+  .add-region input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .add-region input:focus { border-color: var(--accent2); }
+
+  .add-region button {
+    padding: 10px 16px;
+    background: rgba(0,102,255,0.1);
+    border: 1px solid rgba(0,102,255,0.25);
+    color: var(--accent2);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .add-region button:hover { background: rgba(0,102,255,0.2); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .empty p { font-size: 13px; line-height: 1.6; }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spinning { animation: spin 1s linear infinite; display: inline-block; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .mode-grid { grid-template-columns: 1fr; }
+    .schedule-grid { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo">🎯</div>
+    <div class="header-text">
+      <h1>Agente Prospecção</h1>
+      <p>Empresas sem site · Google Maps API</p>
+    </div>
+  </div>
+
+  <!-- Quota -->
+  <div class="quota-bar">
+    <div class="quota-stat">
+      <span class="quota-label">Crédito Usado</span>
+      <span class="quota-value" id="quotaUsed">$0,00</span>
+    </div>
+    <div class="quota-track">
+      <div class="quota-fill" id="quotaFill"></div>
+    </div>
+    <div class="quota-stat" style="text-align:right">
+      <span class="quota-label">Disponível</span>
+      <span class="quota-value" id="quotaLeft">$200,00</span>
+    </div>
+    <div class="quota-stat" style="text-align:right">
+      <span class="quota-label">Empresas coletadas</span>
+      <span class="quota-value" id="totalCollected">0</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('busca')">🔍 Busca Manual</button>
+    <button class="tab" onclick="switchTab('agendamento')">⏰ Agendamento</button>
+    <button class="tab" onclick="switchTab('resultados')">📋 Resultados</button>
+  </div>
+
+  <!-- BUSCA MANUAL -->
+  <div class="panel active" id="panel-busca">
+    <div class="card">
+      <div class="card-title">Configurar Busca</div>
+
+      <div class="field">
+        <label>Região / Bairro / Cidade</label>
+        <input type="text" id="regiao" placeholder="Ex: Savassi, Belo Horizonte" />
+      </div>
+
+      <div class="field">
+        <label>Raio de Busca</label>
+        <div class="slider-wrap">
+          <input type="range" id="raio" min="500" max="15000" step="500" value="3000" oninput="updateRaio(this.value)" />
+          <span class="slider-val" id="raioVal">3 km</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Modo de Busca</label>
+        <div class="mode-grid">
+          <button class="mode-btn active" onclick="setMode(this,'regiao-apenas')">📍 Só Região</button>
+          <button class="mode-btn" onclick="setMode(this,'raio-apenas')">📏 Só Raio</button>
+          <button class="mode-btn" onclick="setMode(this,'combinado')">🔗 Combinado</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" id="btnBuscar" onclick="iniciarBusca()">
+          🔍 Buscar Agora
+        </button>
+        <button class="btn-secondary" onclick="limparResultados()">Limpar</button>
+      </div>
+
+      <div class="status" id="statusBusca">
+        <span>⚡</span> Pronto para buscar
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENDAMENTO -->
+  <div class="panel" id="panel-agendamento">
+    <div class="card">
+      <div class="card-title">Regiões Monitoradas</div>
+
+      <div class="add-region">
+        <input type="text" id="novaRegiao" placeholder="Adicionar bairro ou cidade..." onkeydown="if(event.key==='Enter')addRegiao()" />
+        <button onclick="addRegiao()">+ Adicionar</button>
+      </div>
+
+      <div class="region-list" id="regionList">
+        <div style="color:var(--muted);font-size:12px;padding:8px 0">Nenhuma região adicionada ainda</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Horário Automático</div>
+
+      <div class="schedule-grid">
+        <div class="schedule-item">
+          <label>Hora da Busca</label>
+          <input type="time" id="scheduleTime" value="06:00" />
+        </div>
+        <div class="schedule-item">
+          <label>Frequência</label>
+          <select id="scheduleFreq">
+            <option value="daily">Todo dia</option>
+            <option value="weekdays">Dias úteis</option>
+            <option value="weekly">Semanal</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toggle-wrap">
+        <span class="toggle-label">Ativar busca automática</span>
+        <label class="toggle">
+          <input type="checkbox" id="scheduleToggle" onchange="toggleSchedule(this)" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="status" id="statusSchedule">
+        <span>💤</span> Agendamento desativado
+      </div>
+
+      <div class="actions" style="margin-top:16px">
+        <button class="btn-primary" onclick="rodarAgendadas()">▶ Rodar Regiões Agora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="panel" id="panel-resultados">
+    <div class="card">
+      <div class="results-header">
+        <span class="results-count" id="resultsCount">0 empresas encontradas</span>
+        <button class="btn-export" onclick="exportarCSV()">⬇ Exportar CSV</button>
+      </div>
+
+      <div id="tableWrap">
+        <div class="empty">
+          <div class="icon">📭</div>
+          <p>Nenhum resultado ainda.<br>Faça uma busca na aba <strong>Busca Manual</strong>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────
+const API_KEY = 'AIzaSyClOpP2XVhrGL8FTwUHLtqMcHAkKXHmWYE';
+const COST_NEARBY = 0.032;
+const COST_DETAILS = 0.017;
+const QUOTA_LIMIT = 200;
+
+const CATEGORIAS = [
+  'restaurante','lanchonete','padaria','mercado','farmácia','salão de beleza',
+  'barbearia','clínica médica','dentista','academia','pet shop','oficina mecânica',
+  'eletricista','encanador','marceneiro','pintor','serralheria','gráfica',
+  'escola','creche','advogado','contabilidade','imobiliária','construtora',
+  'loja de roupas','sapataria','ótica','joalheria','floricultura','lavanderia',
+  'hotel','pousada','buffet','fotógrafo','designer gráfico','assistência técnica'
+];
+
+// ─── STATE ────────────────────────────────────────────────────────
+let results = JSON.parse(localStorage.getItem('prosp_results') || '[]');
+let seenIds = new Set(JSON.parse(localStorage.getItem('prosp_seen') || '[]'));
+let quotaUsed = parseFloat(localStorage.getItem('prosp_quota') || '0');
+let regioes = JSON.parse(localStorage.getItem('prosp_regioes') || '[]');
+let scheduleInterval = null;
+let currentMode = 'regiao-apenas';
+
+// ─── INIT ─────────────────────────────────────────────────────────
+updateQuotaUI();
+renderResultsTable();
+renderRegioes();
+
+// ─── UI HELPERS ───────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['busca','agendamento','resultados'][i] === tab);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+}
+
+function updateRaio(v) {
+  const km = (v/1000).toFixed(1).replace('.0','');
+  document.getElementById('raioVal').textContent = km + ' km';
+}
+
+function setMode(btn, mode) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMode = mode;
+}
+
+function setStatus(id, msg, type='') {
+  const el = document.getElementById(id);
+  el.className = 'status ' + type;
+  el.innerHTML = type === 'running'
+    ? `<div class="pulse"></div> ${msg}`
+    : `<span>${type==='done'?'✅':type==='error'?'❌':'⚡'}</span> ${msg}`;
+}
+
+function updateQuotaUI() {
+  const pct = Math.min((quotaUsed / QUOTA_LIMIT) * 100, 100);
+  document.getElementById('quotaUsed').textContent = '$' + quotaUsed.toFixed(2).replace('.',',');
+  document.getElementById('quotaLeft').textContent = '$' + Math.max(0, QUOTA_LIMIT - quotaUsed).toFixed(2).replace('.',',');
+  document.getElementById('quotaFill').style.width = pct + '%';
+  document.getElementById('totalCollected').textContent = results.length;
+  document.getElementById('resultsCount').textContent = results.length + ' empresa' + (results.length!==1?'s':'') + ' encontrada' + (results.length!==1?'s':'');
+}
+
+function saveState() {
+  localStorage.setItem('prosp_results', JSON.stringify(results));
+  localStorage.setItem('prosp_seen', JSON.stringify([...seenIds]));
+  localStorage.setItem('prosp_quota', quotaUsed.toString());
+  localStorage.setItem('prosp_regioes', JSON.stringify(regioes));
+}
+
+// ─── BUSCA ────────────────────────────────────────────────────────
+async function iniciarBusca() {
+  const regiao = document.getElementById('regiao').value.trim();
+  const raio = parseInt(document.getElementById('raio').value);
+
+  if (!regiao && currentMode !== 'raio-apenas') {
+    setStatus('statusBusca', 'Digite uma região ou bairro', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btnBuscar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinning">⟳</span> Buscando...';
+
+  setStatus('statusBusca', 'Geocodificando localização...', 'running');
+
+  try {
+    let lat, lng;
+
+    if (regiao) {
+      const geo = await geocode(regiao);
+      if (!geo) throw new Error('Localização não encontrada');
+      lat = geo.lat; lng = geo.lng;
+    } else {
+      // fallback: BH center
+      lat = -19.9167; lng = -43.9345;
+    }
+
+    let novos = 0;
+    const total = CATEGORIAS.length;
+
+    for (let i = 0; i < total; i++) {
+      const cat = CATEGORIAS[i];
+      setStatus('statusBusca', `Varrendo: ${cat} (${i+1}/${total}) · ${novos} novas empresas`, 'running');
+
+      const places = await nearbySearch(lat, lng, raio, cat);
+      quotaUsed += COST_NEARBY;
+
+      for (const place of places) {
+        if (seenIds.has(place.place_id)) continue;
+
+        // Só busca detalhes se não tem website
+        if (place.website) { seenIds.add(place.place_id); continue; }
+
+        const details = await placeDetails(place.place_id);
+        quotaUsed += COST_DETAILS;
+
+        if (details.website) { seenIds.add(place.place_id); continue; }
+
+        const phone = details.formatted_phone_number || details.international_phone_number || '';
+        const cleaned = phone.replace(/\D/g,'');
+
+        const empresa = {
+          id: place.place_id,
+          nome: place.name,
+          nicho: cat,
+          endereco: place.vicinity || details.formatted_address || '',
+          telefone: phone,
+          whatsapp: cleaned ? 'https://wa.me/55' + cleaned.replace(/^0/,'') : '',
+          rating: place.rating || '',
+          coletado: new Date().toLocaleDateString('pt-BR'),
+          regiao: regiao || 'Manual'
+        };
+
+        results.push(empresa);
+        seenIds.add(place.place_id);
+        novos++;
+      }
+
+      updateQuotaUI();
+      saveState();
+
+      // Rate limit protection
+      await sleep(200);
+    }
+
+    setStatus('statusBusca', `Concluído! ${novos} novas empresas sem site encontradas`, 'done');
+    renderResultsTable();
+    if (novos > 0) switchTab('resultados');
+
+  } catch (err) {
+    setStatus('statusBusca', 'Erro: ' + err.message, 'error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔍 Buscar Agora';
+}
+
+// ─── API CALLS ────────────────────────────────────────────────────
+async function geocode(address) {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${API_KEY}`;
+  const r = await fetch(url);
+  const d = await r.json();
+  if (d.status !== 'OK') return null;
+  return d.results[0].geometry.location;
+}
+
+async function nearbySearch(lat, lng, radius, keyword) {
+  const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&language=pt-BR&key=${API_KEY}`;
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    return d.results || [];
+  } catch { return []; }
+}
+
+async function placeDetails(placeId) {
+  const fields = 'website,formatted_phone_number,international_phone_number,formatted_address';
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    return d.result || {};
+  } catch { return {}; }
+}
+
+// ─── RESULTADOS TABLE ─────────────────────────────────────────────
+function renderResultsTable() {
+  const wrap = document.getElementById('tableWrap');
+  if (results.length === 0) {
+    wrap.innerHTML = `<div class="empty"><div class="icon">📭</div><p>Nenhum resultado ainda.<br>Faça uma busca na aba <strong>Busca Manual</strong>.</p></div>`;
+    return;
+  }
+
+  const rows = results.map(e => `
+    <tr>
+      <td><strong>${e.nome}</strong></td>
+      <td><span class="nicho-tag">${e.nicho}</span></td>
+      <td style="color:var(--muted);font-size:11px">${e.telefone || '—'}</td>
+      <td>
+        ${e.whatsapp
+          ? `<a href="${e.whatsapp}" target="_blank" class="wpp-btn">💬 WhatsApp</a>`
+          : '<span style="color:var(--muted);font-size:11px">—</span>'}
+      </td>
+      <td style="color:var(--muted);font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.endereco}</td>
+      <td style="color:var(--muted);font-size:10px">${e.coletado}</td>
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Nicho</th>
+            <th>Telefone</th>
+            <th>WhatsApp</th>
+            <th>Endereço</th>
+            <th>Coletado</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+  updateQuotaUI();
+}
+
+// ─── EXPORT CSV ───────────────────────────────────────────────────
+function exportarCSV() {
+  if (results.length === 0) return alert('Nenhum resultado para exportar.');
+  const header = ['Nome','Nicho','Telefone','WhatsApp','Endereço','Coletado em','Região'];
+  const rows = results.map(e => [e.nome,e.nicho,e.telefone,e.whatsapp,e.endereco,e.coletado,e.regiao].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','), ...rows].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `prospeccao_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.csv`;
+  a.click();
+}
+
+function limparResultados() {
+  if (!confirm('Limpar todos os resultados salvos?')) return;
+  results = []; seenIds = new Set(); quotaUsed = 0;
+  saveState(); renderResultsTable(); updateQuotaUI();
+  setStatus('statusBusca', 'Dados limpos. Pronto para nova busca', '');
+}
+
+// ─── REGIÕES / AGENDAMENTO ────────────────────────────────────────
+function addRegiao() {
+  const inp = document.getElementById('novaRegiao');
+  const val = inp.value.trim();
+  if (!val || regioes.includes(val)) return;
+  regioes.push(val);
+  inp.value = '';
+  saveState();
+  renderRegioes();
+}
+
+function removeRegiao(i) {
+  regioes.splice(i, 1);
+  saveState();
+  renderRegioes();
+}
+
+function renderRegioes() {
+  const list = document.getElementById('regionList');
+  if (regioes.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0">Nenhuma região adicionada ainda</div>';
+    return;
+  }
+  list.innerHTML = regioes.map((r,i) => `
+    <div class="region-tag">
+      📍 ${r}
+      <button onclick="removeRegiao(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function toggleSchedule(cb) {
+  if (cb.checked) {
+    const time = document.getElementById('scheduleTime').value;
+    setStatus('statusSchedule', `Ativado · Próxima busca às ${time}`, 'done');
+    // In a real deployment this would use a cron/server. Here we simulate with setInterval.
+    scheduleInterval = setInterval(() => {
+      const now = new Date();
+      const [h,m] = time.split(':').map(Number);
+      if (now.getHours() === h && now.getMinutes() === m) rodarAgendadas();
+    }, 60000);
+  } else {
+    clearInterval(scheduleInterval);
+    setStatus('statusSchedule', 'Agendamento desativado', '');
+  }
+}
+
+async function rodarAgendadas() {
+  if (regioes.length === 0) {
+    setStatus('statusSchedule', 'Adicione regiões antes de rodar', 'error');
+    return;
+  }
+  const raio = 3000;
+  setStatus('statusSchedule', `Rodando ${regioes.length} regiões...`, 'running');
+  for (const reg of regioes) {
+    document.getElementById('regiao').value = reg;
+    await iniciarBusca();
+  }
+  setStatus('statusSchedule', `Concluído · ${new Date().toLocaleTimeString('pt-BR')}`, 'done');
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
