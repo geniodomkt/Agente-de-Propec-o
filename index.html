@@ -223,10 +223,10 @@
       </div>
 
       <div class="field">
-        <label>Limite de Empresas — parar ao atingir</label>
+        <label>Limite de Empresas — parar ao atingir <span style="color:var(--muted);font-size:10px">(0 = sem limite)</span></label>
         <div style="display:flex;align-items:center;gap:12px">
           <div class="slider-wrap" style="flex:1">
-            <input type="range" id="limiteEmpresas" min="10" max="1000" step="10" value="0" oninput="updateLimite(this.value)" />
+            <input type="range" id="limiteEmpresas" min="0" max="1000" step="10" value="0" oninput="updateLimite(this.value)" />
             <span class="slider-val" id="limiteVal" style="min-width:90px">Sem limite</span>
           </div>
         </div>
@@ -746,12 +746,13 @@ async function iniciarBusca() {
   if (!globalMode && categoriasParaBuscar.length === 0) { setStatus('statusBusca','Selecione ao menos um nicho ou use Busca Global','error'); return; }
 
   stopFlag = false;
-  const limite = parseInt(document.getElementById('limiteEmpresas').value) || 0;
+  const limiteRaw = parseInt(document.getElementById('limiteEmpresas').value);
+  const limite = (isNaN(limiteRaw) || limiteRaw <= 0) ? 0 : limiteRaw; // 0 = sem limite
   const btn=document.getElementById('btnBuscar');
   const btnParar=document.getElementById('btnParar');
   btn.disabled=true; btn.innerHTML='<span class="spinning">⟳</span> Buscando...';
   btnParar.style.display=''; btnParar.disabled=false; btnParar.textContent='⏹ Parar';
-  setStatus('statusBusca','Geocodificando localização...','running');
+  setStatus('statusBusca', limite > 0 ? `Iniciando busca · meta: ${limite} empresas...` : 'Geocodificando localização...','running');
 
   try {
     let lat,lng;
